@@ -25,6 +25,25 @@ type pathLeaf struct {
 	matchesFullPath bool
 }
 
+func (leaf *pathLeaf) match(wildcardValues []string) bool {
+	if leaf.regexps == nil {
+		return true
+	}
+
+	if len(leaf.regexps) != len(wildcardValues) {
+		panic("bug: invariant violated")
+	}
+
+	for i, r := range leaf.regexps {
+		if r != nil {
+			if !r.MatchString(wildcardValues[i]) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 type pathNode struct {
 	// Given the next segment s, if edges[s] exists, then we'll look there first.
 	edges map[string]*pathNode
