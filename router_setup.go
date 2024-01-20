@@ -35,3 +35,12 @@ type actionHandler struct {
 	DynamicHandler reflect.Value
 	GenericHandler GenericHandler
 }
+
+type route struct {
+	Router  *Router
+	Method  httpMethod
+	Path    string
+	Handler *actionHandler
+}
+
+type Router struct{}
