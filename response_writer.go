@@ -62,3 +62,10 @@ func (w *appResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	}
 	return hijacker.Hijack()
 }
+
+func (w *appResponseWriter) Flush() {
+	flusher, ok := w.ResponseWriter.(http.Flusher)
+	if ok {
+		flusher.Flush()
+	}
+}
