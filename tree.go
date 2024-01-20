@@ -35,3 +35,7 @@ type pathNode struct {
 	// If true, this pathNode has a pathparam that matches the rest of the path
 	matchesFullPath bool
 }
+
+func newPathNode() *pathNode {
+	return &pathNode{edges: make(map[string]*pathNode)}
+}
