@@ -1,7 +1,10 @@
 package grom
 
 import (
+	"bufio"
 	"context"
+	"errors"
+	"net"
 	"net/http"
 )
 
@@ -48,4 +51,16 @@ func (w *appResponseWriter) Written() bool {
 
 func (w *appResponseWriter) Size() int {
 	return w.size
+}
+
+func (w *appResponseWriter) StatusCode() int {
+	return w.statusCode
+}
+
+func (w *appResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := w.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("the ResponseWriter doesn't support the Hijacker interface")
+	}
+	return hijacker.Hijack()
 }
