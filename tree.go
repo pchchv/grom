@@ -58,3 +58,21 @@ type pathNode struct {
 func newPathNode() *pathNode {
 	return &pathNode{edges: make(map[string]*pathNode)}
 }
+
+func makeWildcardMap(leaf *pathLeaf, wildcards []string) map[string]string {
+	if leaf == nil {
+		return nil
+	}
+
+	leafWildcards := leaf.wildcards
+	if len(wildcards) == 0 || (len(leafWildcards) != len(wildcards)) {
+		return nil
+	}
+
+	// At this point, we know that wildcards and leaf.wildcards match in length.
+	assoc := make(map[string]string)
+	for i, w := range wildcards {
+		assoc[leafWildcards[i]] = w
+	}
+	return assoc
+}
