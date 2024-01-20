@@ -121,3 +121,25 @@ func makeWildcardMap(leaf *pathLeaf, wildcards []string) map[string]string {
 	}
 	return assoc
 }
+
+// isWildcard checks if key is a wildcard, if so, returns true, its name and regexp.
+// Eg, (true, "category_id", "\d+")
+//
+// key is a non-empty path segment like "admin" or ":category_id" or ":category_id:\d+"
+func isWildcard(key string) (bool, string, string) {
+	if key[0] == ':' {
+		substrs := strings.SplitN(key[1:], ":", 2)
+		if len(substrs) == 1 {
+			return true, substrs[0], ""
+		}
+		return true, substrs[0], substrs[1]
+	}
+	return false, "", ""
+}
+
+func compileRegexp(regStr string) *regexp.Regexp {
+	if regStr == "" {
+		return nil
+	}
+	return regexp.MustCompile("^" + regStr + "$")
+}
