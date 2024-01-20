@@ -41,3 +41,11 @@ func (w *appResponseWriter) WriteHeader(statusCode int) {
 	w.statusCode = statusCode
 	w.ResponseWriter.WriteHeader(statusCode)
 }
+
+func (w *appResponseWriter) Written() bool {
+	return w.statusCode != 0
+}
+
+func (w *appResponseWriter) Size() int {
+	return w.size
+}
