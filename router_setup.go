@@ -1,5 +1,7 @@
 package grom
 
+import "reflect"
+
 const (
 	httpMethodGet     = httpMethod("GET")
 	httpMethodPost    = httpMethod("POST")
@@ -9,6 +11,8 @@ const (
 	httpMethodHead    = httpMethod("HEAD")
 	httpMethodOptions = httpMethod("OPTIONS")
 )
+
+var httpMethods = []httpMethod{httpMethodGet, httpMethodPost, httpMethodPut, httpMethodDelete, httpMethodPatch, httpMethodHead, httpMethodOptions}
 
 type httpMethod string
 
@@ -25,3 +29,9 @@ type GenericHandler func(ResponseWriter, *Request)
 // static file serving, has this signature. If your middlware doesn't need a context, you can use this
 // signature to get a small performance boost.
 type GenericMiddleware func(ResponseWriter, *Request, NextMiddlewareFunc)
+
+type actionHandler struct {
+	Generic        bool
+	DynamicHandler reflect.Value
+	GenericHandler GenericHandler
+}
