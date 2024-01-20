@@ -19,3 +19,9 @@ type ResponseWriter interface {
 	// Size returns the size in bytes of the body written so far.
 	Size() int
 }
+
+type appResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+	size       int
+}
