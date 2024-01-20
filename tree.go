@@ -24,3 +24,14 @@ type pathLeaf struct {
 	// If true, this leaf has a pathparam that matches the rest of the path.
 	matchesFullPath bool
 }
+
+type pathNode struct {
+	// Given the next segment s, if edges[s] exists, then we'll look there first.
+	edges map[string]*pathNode
+	// If set, failure to match on edges will match on wildcard
+	wildcard *pathNode
+	// If set, and we have nothing left to match, then we match on this node
+	leaves []*pathLeaf
+	// If true, this pathNode has a pathparam that matches the rest of the path
+	matchesFullPath bool
+}
