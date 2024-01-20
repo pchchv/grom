@@ -2,7 +2,6 @@ package grom
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -14,7 +13,6 @@ type ResponseWriter interface {
 	http.ResponseWriter
 	http.Flusher
 	http.Hijacker
-	context.Context
 	// StatusCode returns the written status code, or 0 if none has been written yet.
 	StatusCode() int
 	// Written returns whether the header has been written yet.
