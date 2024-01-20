@@ -16,3 +16,12 @@ type httpMethod string
 // You should usually pass the existing ResponseWriter and *Request into the next middlware, but you can
 // chose to swap them if you want to modify values or capture things written to the ResponseWriter.
 type NextMiddlewareFunc func(ResponseWriter, *Request)
+
+// GenericHandler are handlers that don't have or need a context. If your handler doesn't need a context,
+// you can use this signature to get a small performance boost.
+type GenericHandler func(ResponseWriter, *Request)
+
+// GenericMiddleware are middleware that doesn't have or need a context. General purpose middleware, such as
+// static file serving, has this signature. If your middlware doesn't need a context, you can use this
+// signature to get a small performance boost.
+type GenericMiddleware func(ResponseWriter, *Request, NextMiddlewareFunc)
