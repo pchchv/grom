@@ -25,3 +25,19 @@ type appResponseWriter struct {
 	statusCode int
 	size       int
 }
+
+// Don't need this yet because we get it for free:
+func (w *appResponseWriter) Write(data []byte) (n int, err error) {
+	if w.statusCode == 0 {
+		w.statusCode = http.StatusOK
+	}
+
+	size, err := w.ResponseWriter.Write(data)
+	w.size += size
+	return size, err
+}
+
+func (w *appResponseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
