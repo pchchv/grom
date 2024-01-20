@@ -1,6 +1,9 @@
 package grom
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 // pathLeaf represents a leaf path segment that corresponds to a single route.
 // For the route /admin/forums/:forum_id:\d.*/suggestions/:suggestion_id:\d.*
@@ -57,6 +60,48 @@ type pathNode struct {
 
 func newPathNode() *pathNode {
 	return &pathNode{edges: make(map[string]*pathNode)}
+}
+
+// Segments is like ["admin", "users"] representing "/admin/users"
+// wildcardValues are the actual values accumulated when we match on a wildcard.
+func (pn *pathNode) match(segments []string, wildcardValues []string) (leaf *pathLeaf, wildcardMap map[string]string) {
+	// Handle leaf nodes:
+	if len(segments) == 0 {
+		for _, leaf := range pn.leaves {
+			if leaf.match(wildcardValues) {
+				return leaf, makeWildcardMap(leaf, wildcardValues)
+			}
+		}
+		return nil, nil
+	}
+
+	var seg string
+	seg, segments = segments[0], segments[1:]
+	subPn, ok := pn.edges[seg]
+	if ok {
+		leaf, wildcardMap = subPn.match(segments, wildcardValues)
+	}
+
+	if leaf == nil && pn.wildcard != nil {
+		leaf, wildcardMap = pn.wildcard.match(segments, append(wildcardValues, seg))
+	}
+
+	if leaf == nil && pn.matchesFullPath {
+		for _, leaf := range pn.leaves {
+			if leaf.matchesFullPath && leaf.match(wildcardValues) {
+				if len(wildcardValues) > 0 {
+					wcVals := []string{wildcardValues[len(wildcardValues)-1], seg}
+					for _, s := range segments {
+						wcVals = append(wcVals, s)
+					}
+					wildcardValues[len(wildcardValues)-1] = strings.Join(wcVals, "/")
+				}
+				return leaf, makeWildcardMap(leaf, wildcardValues)
+			}
+		}
+		return nil, nil
+	}
+	return leaf, wildcardMap
 }
 
 func makeWildcardMap(leaf *pathLeaf, wildcards []string) map[string]string {
