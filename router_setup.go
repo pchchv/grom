@@ -12,7 +12,10 @@ const (
 	httpMethodOptions = httpMethod("OPTIONS")
 )
 
-var httpMethods = []httpMethod{httpMethodGet, httpMethodPost, httpMethodPut, httpMethodDelete, httpMethodPatch, httpMethodHead, httpMethodOptions}
+var (
+	httpMethods        = []httpMethod{httpMethodGet, httpMethodPost, httpMethodPut, httpMethodDelete, httpMethodPatch, httpMethodHead, httpMethodOptions}
+	emptyInterfaceType = reflect.TypeOf((*interface{})(nil)).Elem()
+)
 
 type httpMethod string
 
@@ -73,4 +76,64 @@ type Router struct {
 	notFoundHandler reflect.Value
 	// This can only be set on the root handler, since by virtue of not finding a route, we don't have a target.
 	optionsHandler reflect.Value
+}
+
+// Ensures vfn is a function, that optionally takes a *ctxType as the first argument,
+// followed by the specified types.
+// Handlers have no return value.
+// Returns true if valid, false otherwise.
+func isValidHandler(vfn reflect.Value, ctxType reflect.Type, types ...reflect.Type) bool {
+	fnType := vfn.Type()
+	if fnType.Kind() != reflect.Func {
+		return false
+	}
+
+	typesStartIdx := 0
+	typesLen := len(types)
+	numIn := fnType.NumIn()
+	numOut := fnType.NumOut()
+	if numOut != 0 {
+		return false
+	}
+
+	if numIn == typesLen {
+		// No context
+	} else if numIn == (typesLen + 1) {
+		// context, types
+		firstArgType := fnType.In(0)
+		if firstArgType != reflect.PtrTo(ctxType) && firstArgType != emptyInterfaceType {
+			return false
+		}
+		typesStartIdx = 1
+	} else {
+		return false
+	}
+
+	for _, typeArg := range types {
+		if fnType.In(typesStartIdx) != typeArg {
+			return false
+		}
+		typesStartIdx++
+	}
+	return true
+}
+
+// Panics unless validation is correct
+func validateContext(ctx interface{}, parentCtxType reflect.Type) {
+	ctxType := reflect.TypeOf(ctx)
+	if ctxType.Kind() != reflect.Struct {
+		panic("web: Context needs to be a struct type")
+	}
+
+	if parentCtxType != nil && parentCtxType != ctxType {
+		if ctxType.NumField() == 0 {
+			panic("web: Context needs to have first field be a pointer to parent context")
+		}
+
+		fldType := ctxType.Field(0).Type
+		// Ensure fld is a pointer to parentCtxType
+		if fldType != reflect.PtrTo(parentCtxType) {
+			panic("web: Context needs to have first field be a pointer to parent context")
+		}
+	}
 }
