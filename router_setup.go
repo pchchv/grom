@@ -121,26 +121,6 @@ func isValidHandler(vfn reflect.Value, ctxType reflect.Type, types ...reflect.Ty
 	return true
 }
 
-// Panics unless validation is correct
-func validateContext(ctx interface{}, parentCtxType reflect.Type) {
-	ctxType := reflect.TypeOf(ctx)
-	if ctxType.Kind() != reflect.Struct {
-		panic("web: Context needs to be a struct type")
-	}
-
-	if parentCtxType != nil && parentCtxType != ctxType {
-		if ctxType.NumField() == 0 {
-			panic("web: Context needs to have first field be a pointer to parent context")
-		}
-
-		fldType := ctxType.Field(0).Type
-		// Ensure fld is a pointer to parentCtxType
-		if fldType != reflect.PtrTo(parentCtxType) {
-			panic("web: Context needs to have first field be a pointer to parent context")
-		}
-	}
-}
-
 // Since it's easy to pass the wrong method to a middleware/handler route,
 // and since the user can't rely on static type checking since we use reflection,
 // lets be super helpful about what they did and what they need to do.
@@ -178,6 +158,26 @@ func instructiveMessage(vfn reflect.Value, addingType string, yourType string, a
 	return str
 }
 
+// Panics unless validation is correct
+func validateContext(ctx interface{}, parentCtxType reflect.Type) {
+	ctxType := reflect.TypeOf(ctx)
+	if ctxType.Kind() != reflect.Struct {
+		panic("web: Context needs to be a struct type")
+	}
+
+	if parentCtxType != nil && parentCtxType != ctxType {
+		if ctxType.NumField() == 0 {
+			panic("web: Context needs to have first field be a pointer to parent context")
+		}
+
+		fldType := ctxType.Field(0).Type
+		// Ensure fld is a pointer to parentCtxType
+		if fldType != reflect.PtrTo(parentCtxType) {
+			panic("web: Context needs to have first field be a pointer to parent context")
+		}
+	}
+}
+
 // Panics unless fn is a proper handler wrt ctxType
 // eg, func(ctx *ctxType, writer, request)
 func validateHandler(vfn reflect.Value, ctxType reflect.Type) {
@@ -185,5 +185,21 @@ func validateHandler(vfn reflect.Value, ctxType reflect.Type) {
 	var resp func() ResponseWriter
 	if !isValidHandler(vfn, ctxType, reflect.TypeOf(resp).Out(0), reflect.TypeOf(req)) {
 		panic(instructiveMessage(vfn, "a handler", "handler", "rw web.ResponseWriter, req *web.Request", ctxType))
+	}
+}
+
+func validateErrorHandler(vfn reflect.Value, ctxType reflect.Type) {
+	var req *Request
+	var resp func() ResponseWriter
+	if !isValidHandler(vfn, ctxType, reflect.TypeOf(resp).Out(0), reflect.TypeOf(req), emptyInterfaceType) {
+		panic(instructiveMessage(vfn, "an error handler", "error handler", "rw web.ResponseWriter, req *web.Request, err interface{}", ctxType))
+	}
+}
+
+func validateNotFoundHandler(vfn reflect.Value, ctxType reflect.Type) {
+	var req *Request
+	var resp func() ResponseWriter
+	if !isValidHandler(vfn, ctxType, reflect.TypeOf(resp).Out(0), reflect.TypeOf(req)) {
+		panic(instructiveMessage(vfn, "a 'not found' handler", "not found handler", "rw web.ResponseWriter, req *web.Request", ctxType))
 	}
 }
