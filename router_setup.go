@@ -203,3 +203,21 @@ func validateNotFoundHandler(vfn reflect.Value, ctxType reflect.Type) {
 		panic(instructiveMessage(vfn, "a 'not found' handler", "not found handler", "rw web.ResponseWriter, req *web.Request", ctxType))
 	}
 }
+
+func validateOptionsHandler(vfn reflect.Value, ctxType reflect.Type) {
+	var req *Request
+	var resp func() ResponseWriter
+	var methods []string
+	if !isValidHandler(vfn, ctxType, reflect.TypeOf(resp).Out(0), reflect.TypeOf(req), reflect.TypeOf(methods)) {
+		panic(instructiveMessage(vfn, "an 'options' handler", "options handler", "rw web.ResponseWriter, req *web.Request, methods []string", ctxType))
+	}
+}
+
+func validateMiddleware(vfn reflect.Value, ctxType reflect.Type) {
+	var req *Request
+	var resp func() ResponseWriter
+	var n NextMiddlewareFunc
+	if !isValidHandler(vfn, ctxType, reflect.TypeOf(resp).Out(0), reflect.TypeOf(req), reflect.TypeOf(n)) {
+		panic(instructiveMessage(vfn, "middleware", "middleware", "rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc", ctxType))
+	}
+}
