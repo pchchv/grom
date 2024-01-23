@@ -166,6 +166,23 @@ func (r *Router) NotFound(fn interface{}) *Router {
 	return r
 }
 
+// OptionsHandler sets the specified function as the options handler and returns the router.
+// Note that only the root router can have a OptionsHandler handler.
+func (r *Router) OptionsHandler(fn interface{}) *Router {
+	if r.parent != nil {
+		panic("You can only set an OptionsHandler on the root router.")
+	}
+	vfn := reflect.ValueOf(fn)
+	validateOptionsHandler(vfn, r.contextType)
+	r.optionsHandler = vfn
+	return r
+}
+
+// Get will add a route to the router that matches on GET requests and the specified path.
+func (r *Router) Get(path string, fn interface{}) *Router {
+	return r.addRoute(httpMethodGet, path, fn)
+}
+
 // Calculates the max child depth of the node.
 // Leaves return 1.
 // For Parent->Child, Parent is 2.
