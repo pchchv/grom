@@ -185,3 +185,18 @@ func compileRegexp(regStr string) *regexp.Regexp {
 	}
 	return regexp.MustCompile("^" + regStr + "$")
 }
+
+// "/" -> []
+// "/admin" -> ["admin"]
+// "/admin/" -> ["admin"]
+// "/admin/users" -> ["admin", "users"]
+func splitPath(key string) []string {
+	elements := strings.Split(key, "/")
+	if elements[0] == "" {
+		elements = elements[1:]
+	}
+	if elements[len(elements)-1] == "" {
+		elements = elements[:len(elements)-1]
+	}
+	return elements
+}
