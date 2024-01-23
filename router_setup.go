@@ -43,4 +43,10 @@ type route struct {
 	Handler *actionHandler
 }
 
+type middlewareHandler struct {
+	Generic           bool
+	DynamicMiddleware reflect.Value
+	GenericMiddleware GenericMiddleware
+}
+
 type Router struct{}
