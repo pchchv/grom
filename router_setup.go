@@ -146,6 +146,26 @@ func (r *Router) Middleware(fn interface{}) *Router {
 	return r
 }
 
+// Error sets the specified function as the error handler (when panics happen) and returns the router.
+func (r *Router) Error(fn interface{}) *Router {
+	vfn := reflect.ValueOf(fn)
+	validateErrorHandler(vfn, r.contextType)
+	r.errorHandler = vfn
+	return r
+}
+
+// NotFound sets the specified function as the not-found handler (when no route matches) and returns the router.
+// Note that only the root router can have a NotFound handler.
+func (r *Router) NotFound(fn interface{}) *Router {
+	if r.parent != nil {
+		panic("You can only set a NotFoundHandler on the root router.")
+	}
+	vfn := reflect.ValueOf(fn)
+	validateNotFoundHandler(vfn, r.contextType)
+	r.notFoundHandler = vfn
+	return r
+}
+
 // Calculates the max child depth of the node.
 // Leaves return 1.
 // For Parent->Child, Parent is 2.
