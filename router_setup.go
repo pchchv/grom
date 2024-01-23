@@ -248,3 +248,10 @@ func validateMiddleware(vfn reflect.Value, ctxType reflect.Type) {
 		panic(instructiveMessage(vfn, "middleware", "middleware", "rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc", ctxType))
 	}
 }
+
+// Both rootPath/childPath are like "/" and "/users"
+// Assumption is that both are well-formed paths.
+// Returns a path without a trailing "/" unless the overall path is just "/"
+func appendPath(rootPath, childPath string) string {
+	return strings.TrimRight(rootPath, "/") + "/" + strings.TrimLeft(childPath, "/")
+}
