@@ -62,6 +62,13 @@ func newPathNode() *pathNode {
 	return &pathNode{edges: make(map[string]*pathNode)}
 }
 
+func (pn *pathNode) Match(path string) (leaf *pathLeaf, wildcards map[string]string) {
+	if len(path) == 0 || path[0] != '/' {
+		return nil, nil
+	}
+	return pn.match(splitPath(path), nil)
+}
+
 // Segments is like ["admin", "users"] representing "/admin/users"
 // wildcardValues are the actual values accumulated when we match on a wildcard.
 func (pn *pathNode) match(segments []string, wildcardValues []string) (leaf *pathLeaf, wildcardMap map[string]string) {
@@ -144,6 +151,10 @@ func (pn *pathNode) addInternal(segments []string, route *route, wildcards []str
 			}
 		}
 	}
+}
+
+func (pn *pathNode) add(path string, route *route) {
+	pn.addInternal(splitPath(path), route, nil, nil)
 }
 
 func makeWildcardMap(leaf *pathLeaf, wildcards []string) map[string]string {
