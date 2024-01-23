@@ -17,3 +17,18 @@ type Request struct {
 	rootContext   reflect.Value // Root context. Set immediately.
 	targetContext reflect.Value // The target context corresponding to the route. Not set until root middleware is done.
 }
+
+// IsRouted can be called from middleware to determine if the request has been routed yet.
+func (r *Request) IsRouted() bool {
+	return r.route != nil
+}
+
+// RoutePath returns the routed path string, e.g. if a route was registered with
+// router.Get("/suggestions/:suggestion_id/comments", f),
+// then RoutePath will return "/suggestions/:suggestion_id/comments".
+func (r *Request) RoutePath() string {
+	if r.route != nil {
+		return r.route.Path
+	}
+	return ""
+}
