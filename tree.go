@@ -104,6 +104,48 @@ func (pn *pathNode) match(segments []string, wildcardValues []string) (leaf *pat
 	return leaf, wildcardMap
 }
 
+func (pn *pathNode) addInternal(segments []string, route *route, wildcards []string, regexps []*regexp.Regexp) {
+	if len(segments) == 0 {
+		allNilRegexps := true
+		for _, r := range regexps {
+			if r != nil {
+				allNilRegexps = false
+				break
+			}
+		}
+
+		if allNilRegexps {
+			regexps = nil
+		}
+
+		matchesFullPath := false
+		if len(wildcards) > 0 {
+			matchesFullPath = wildcards[len(wildcards)-1] == "*"
+		}
+		pn.leaves = append(pn.leaves, &pathLeaf{route: route, wildcards: wildcards, regexps: regexps, matchesFullPath: matchesFullPath})
+	} else {
+		seg := segments[0]
+		wc, wcName, wcRegexpStr := isWildcard(seg)
+		if wc {
+			if pn.wildcard == nil {
+				pn.wildcard = newPathNode()
+			}
+
+			if !pn.wildcard.matchesFullPath {
+				pn.wildcard.matchesFullPath = wcName == "*"
+			}
+			pn.wildcard.addInternal(segments[1:], route, append(wildcards, wcName), append(regexps, compileRegexp(wcRegexpStr)))
+		} else {
+			if subPn, ok := pn.edges[seg]; !ok {
+				subPn = newPathNode()
+				pn.edges[seg] = subPn
+			} else {
+				subPn.addInternal(segments[1:], route, wildcards, regexps)
+			}
+		}
+	}
+}
+
 func makeWildcardMap(leaf *pathLeaf, wildcards []string) map[string]string {
 	if leaf == nil {
 		return nil
