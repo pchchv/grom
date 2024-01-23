@@ -108,6 +108,33 @@ func NewWithPrefix(ctx interface{}, pathPrefix string) *Router {
 	return r
 }
 
+// Calculates the max child depth of the node.
+// Leaves return 1.
+// For Parent->Child, Parent is 2.
+func (r *Router) depth() (max int) {
+	for _, child := range r.children {
+		if childDepth := child.depth(); childDepth > max {
+			max = childDepth
+		}
+	}
+	return max + 1
+}
+
+func (r *Router) addRoute(method httpMethod, path string, fn interface{}) *Router {
+	vfn := reflect.ValueOf(fn)
+	validateHandler(vfn, r.contextType)
+	fullPath := appendPath(r.pathPrefix, path)
+	route := &route{Method: method, Path: fullPath, Router: r}
+	if vfn.Type().NumIn() == 2 {
+		route.Handler = &actionHandler{Generic: true, GenericHandler: fn.(func(ResponseWriter, *Request))}
+	} else {
+		route.Handler = &actionHandler{Generic: false, DynamicHandler: vfn}
+	}
+	r.routes = append(r.routes, route)
+	r.root[method].add(fullPath, route)
+	return r
+}
+
 // Ensures vfn is a function, that optionally takes a *ctxType as the first argument,
 // followed by the specified types.
 // Handlers have no return value.
