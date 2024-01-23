@@ -81,6 +81,33 @@ type Router struct {
 	optionsHandler reflect.Value
 }
 
+// New returns a new router with context type ctx.
+// ctx should be a struct instance,
+// whose purpose is to communicate type information.
+// On each request,
+// an instance of this context type will be automatically allocated and sent to handlers.
+func New(ctx interface{}) *Router {
+	validateContext(ctx, nil)
+	r := &Router{}
+	r.contextType = reflect.TypeOf(ctx)
+	r.pathPrefix = "/"
+	r.maxChildrenDepth = 1
+	r.root = make(map[httpMethod]*pathNode)
+	for _, method := range httpMethods {
+		r.root[method] = newPathNode()
+	}
+	return r
+}
+
+// NewWithPrefix returns a new router (see New) but each route will have an implicit prefix.
+// For instance, with pathPrefix = "/api/v2",
+// all routes under this router will begin with "/api/v2".
+func NewWithPrefix(ctx interface{}, pathPrefix string) *Router {
+	r := New(ctx)
+	r.pathPrefix = pathPrefix
+	return r
+}
+
 // Ensures vfn is a function, that optionally takes a *ctxType as the first argument,
 // followed by the specified types.
 // Handlers have no return value.
