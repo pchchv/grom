@@ -49,4 +49,28 @@ type middlewareHandler struct {
 	GenericMiddleware GenericMiddleware
 }
 
-type Router struct{}
+// Router implements net/http's Handler interface and is what you attach middleware, routes/handlers, and subrouters to.
+type Router struct {
+	// Hierarchy:
+	parent           *Router // nil if root router.
+	children         []*Router
+	maxChildrenDepth int
+	// For each request we'll create one of these objects
+	contextType reflect.Type
+	// e.g. "/" or "/admin".
+	// Any routes added to this router will be prefixed with this.
+	pathPrefix string
+	// Routeset contents:
+	middleware []*middlewareHandler
+	routes     []*route
+	// The root pathnode is the same for a tree of Routers
+	root map[httpMethod]*pathNode
+	// This can can be set on any router.
+	// The target's ErrorHandler will be invoked if it exists.
+	errorHandler reflect.Value
+	// This can only be set on the root handler, since by virtue of not finding a route, we don't have a target.
+	// (That being said, in the future we could investigate namespace matches)
+	notFoundHandler reflect.Value
+	// This can only be set on the root handler, since by virtue of not finding a route, we don't have a target.
+	optionsHandler reflect.Value
+}
