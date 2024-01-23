@@ -198,6 +198,21 @@ func (r *Router) Delete(path string, fn interface{}) *Router {
 	return r.addRoute(httpMethodDelete, path, fn)
 }
 
+// Patch will add a route to the router that matches on PATCH requests and the specified path.
+func (r *Router) Patch(path string, fn interface{}) *Router {
+	return r.addRoute(httpMethodPatch, path, fn)
+}
+
+// Head will add a route to the router that matches on HEAD requests and the specified path.
+func (r *Router) Head(path string, fn interface{}) *Router {
+	return r.addRoute(httpMethodHead, path, fn)
+}
+
+// Options will add a route to the router that matches on OPTIONS requests and the specified path.
+func (r *Router) Options(path string, fn interface{}) *Router {
+	return r.addRoute(httpMethodOptions, path, fn)
+}
+
 // Calculates the max child depth of the node.
 // Leaves return 1.
 // For Parent->Child, Parent is 2.
