@@ -108,6 +108,44 @@ func NewWithPrefix(ctx interface{}, pathPrefix string) *Router {
 	return r
 }
 
+// Subrouter attaches a new subrouter to the specified router and returns it.
+// You can use the same context or pass a new one.
+// If you pass a new one, it must
+// embed a pointer to the previous context in the first slot.
+// You can also pass a pathPrefix that each route will have.
+// If "" is passed, then no path prefix is applied.
+func (r *Router) Subrouter(ctx interface{}, pathPrefix string) *Router {
+	validateContext(ctx, r.contextType)
+	// Create new router, link up hierarchy
+	newRouter := &Router{parent: r}
+	r.children = append(r.children, newRouter)
+	// Increment maxChildrenDepth if this is the first child of the router
+	if len(r.children) == 1 {
+		curParent := r
+		for curParent != nil {
+			curParent.maxChildrenDepth = curParent.depth()
+			curParent = curParent.parent
+		}
+	}
+
+	newRouter.contextType = reflect.TypeOf(ctx)
+	newRouter.pathPrefix = appendPath(r.pathPrefix, pathPrefix)
+	newRouter.root = r.root
+	return newRouter
+}
+
+// Middleware adds the specified middleware tot he router and returns the router.
+func (r *Router) Middleware(fn interface{}) *Router {
+	vfn := reflect.ValueOf(fn)
+	validateMiddleware(vfn, r.contextType)
+	if vfn.Type().NumIn() == 3 {
+		r.middleware = append(r.middleware, &middlewareHandler{Generic: true, GenericMiddleware: fn.(func(ResponseWriter, *Request, NextMiddlewareFunc))})
+	} else {
+		r.middleware = append(r.middleware, &middlewareHandler{Generic: false, DynamicMiddleware: vfn})
+	}
+	return r
+}
+
 // Calculates the max child depth of the node.
 // Leaves return 1.
 // For Parent->Child, Parent is 2.
