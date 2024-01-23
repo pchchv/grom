@@ -183,6 +183,21 @@ func (r *Router) Get(path string, fn interface{}) *Router {
 	return r.addRoute(httpMethodGet, path, fn)
 }
 
+// Post will add a route to the router that matches on POST requests and the specified path.
+func (r *Router) Post(path string, fn interface{}) *Router {
+	return r.addRoute(httpMethodPost, path, fn)
+}
+
+// Put will add a route to the router that matches on PUT requests and the specified path.
+func (r *Router) Put(path string, fn interface{}) *Router {
+	return r.addRoute(httpMethodPut, path, fn)
+}
+
+// Delete will add a route to the router that matches on DELETE requests and the specified path.
+func (r *Router) Delete(path string, fn interface{}) *Router {
+	return r.addRoute(httpMethodDelete, path, fn)
+}
+
 // Calculates the max child depth of the node.
 // Leaves return 1.
 // For Parent->Child, Parent is 2.
