@@ -55,3 +55,36 @@ func contextsFor(contexts []reflect.Value, routers []*Router) []reflect.Value {
 	}
 	return contexts
 }
+
+func invoke(handler reflect.Value, ctx reflect.Value, values []reflect.Value) {
+	numIn := handler.Type().NumIn()
+	if numIn == len(values) {
+		handler.Call(values)
+	} else {
+		values = append([]reflect.Value{ctx}, values...)
+		handler.Call(values)
+	}
+}
+
+func calculateRoute(rootRouter *Router, req *Request) (*route, map[string]string) {
+	var leaf *pathLeaf
+	var wildcardMap map[string]string
+	method := httpMethod(req.Method)
+	tree, ok := rootRouter.root[method]
+	if ok {
+		leaf, wildcardMap = tree.Match(req.URL.Path)
+	}
+
+	// If no match and this is a HEAD, route on GET.
+	if leaf == nil && method == httpMethodHead {
+		tree, ok := rootRouter.root[httpMethodGet]
+		if ok {
+			leaf, wildcardMap = tree.Match(req.URL.Path)
+		}
+	}
+
+	if leaf == nil {
+		return nil, nil
+	}
+	return leaf.route, wildcardMap
+}
