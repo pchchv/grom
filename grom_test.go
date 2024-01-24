@@ -18,6 +18,9 @@ func init() {
 	PanicHandler = nullPanicReporter{}
 }
 
+// Some default contexts and possible error handlers / actions
+type Context struct{}
+
 // callerInfo returns the caller's caller info.
 func callerInfo() string {
 	_, file, line, ok := runtime.Caller(2)
