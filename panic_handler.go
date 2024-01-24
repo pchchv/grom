@@ -13,3 +13,7 @@ type PanicReporter interface {
 type logPanicReporter struct {
 	log *log.Logger
 }
+
+func (l logPanicReporter) Panic(url string, err interface{}, stack string) {
+	l.log.Printf("PANIC\nURL: %v\nERROR: %v\nSTACK:\n%s\n", url, err, stack)
+}
