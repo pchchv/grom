@@ -3,8 +3,10 @@ package grom
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"runtime"
 	"strings"
+	"testing"
 )
 
 type nullPanicReporter struct{}
@@ -98,4 +100,21 @@ func callerInfo() string {
 	parts := strings.Split(file, "/")
 	file = parts[len(parts)-1]
 	return fmt.Sprintf("%s:%d", file, line)
+}
+
+// Make a testing request
+func newTestRequest(method, path string) (*httptest.ResponseRecorder, *http.Request) {
+	request, _ := http.NewRequest(method, path, nil)
+	recorder := httptest.NewRecorder()
+	return recorder, request
+}
+
+func assertResponse(t *testing.T, rr *httptest.ResponseRecorder, body string, code int) {
+	if gotBody := strings.TrimSpace(string(rr.Body.Bytes())); body != gotBody {
+		t.Errorf("assertResponse: expected body to be %s but got %s. (caller: %s)", body, gotBody, callerInfo())
+	}
+
+	if code != rr.Code {
+		t.Errorf("assertResponse: expected code to be %d but got %d. (caller: %s)", code, rr.Code, callerInfo())
+	}
 }
