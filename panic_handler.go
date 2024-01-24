@@ -1,6 +1,17 @@
 package grom
 
-import "log"
+import (
+	"log"
+	"os"
+)
+
+// PanicHandler will be logged to in panic conditions (eg, division by zero in an app handler).
+// Applications can set web.PanicHandler = your own logger, if they wish.
+// In terms of logging the requests / responses, see logger_middleware.
+// That is a completely separate system.
+var PanicHandler = PanicReporter(logPanicReporter{
+	log: log.New(os.Stderr, "ERROR ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile),
+})
 
 // PanicReporter can receive panics that happen when serving
 // a request and report them to a log of some sort.
