@@ -79,6 +79,15 @@ func (c *AdminContext) ErrorAction(w ResponseWriter, r *Request) {
 	fmt.Fprintln(w, x/y)
 }
 
+type TicketsContext struct {
+	*AdminContext
+}
+
+func (c *TicketsContext) ErrorAction(w ResponseWriter, r *Request) {
+	var x, y int
+	fmt.Fprintln(w, x/y)
+}
+
 // callerInfo returns the caller's caller info.
 func callerInfo() string {
 	_, file, line, ok := runtime.Caller(2)
