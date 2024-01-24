@@ -32,6 +32,16 @@ func (c *Context) ErrorHandler(w ResponseWriter, r *Request, err interface{}) {
 	fmt.Fprintf(w, "My Error")
 }
 
+func (c *Context) ErrorHandlerSecondary(w ResponseWriter, r *Request, err interface{}) {
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintf(w, "My Secondary Error")
+}
+
+func (c *Context) ErrorAction(w ResponseWriter, r *Request) {
+	var x, y int
+	fmt.Fprintln(w, x/y)
+}
+
 // callerInfo returns the caller's caller info.
 func callerInfo() string {
 	_, file, line, ok := runtime.Caller(2)
