@@ -2,6 +2,7 @@ package grom
 
 import (
 	"fmt"
+	"net/http"
 	"runtime"
 	"strings"
 )
@@ -20,6 +21,16 @@ func init() {
 
 // Some default contexts and possible error handlers / actions
 type Context struct{}
+
+func (c *Context) ErrorMiddleware(w ResponseWriter, r *Request, next NextMiddlewareFunc) {
+	var x, y int
+	fmt.Fprintln(w, x/y)
+}
+
+func (c *Context) ErrorHandler(w ResponseWriter, r *Request, err interface{}) {
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintf(w, "My Error")
+}
 
 // callerInfo returns the caller's caller info.
 func callerInfo() string {
