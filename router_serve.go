@@ -14,6 +14,14 @@ type middlewareClosure struct {
 	Next                   NextMiddlewareFunc
 }
 
+func (mw *middlewareHandler) invoke(ctx reflect.Value, rw ResponseWriter, req *Request, next NextMiddlewareFunc) {
+	if mw.Generic {
+		mw.GenericMiddleware(rw, req, next)
+	} else {
+		mw.DynamicMiddleware.Call([]reflect.Value{ctx, reflect.ValueOf(rw), reflect.ValueOf(req), reflect.ValueOf(next)})
+	}
+}
+
 // routersFor returns [root router, child router, ..., leaf route's router]
 // given the route and the target router.
 // Uses memory in routers to store this information.
