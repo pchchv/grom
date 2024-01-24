@@ -147,3 +147,110 @@ func calculateRoute(rootRouter *Router, req *Request) (*route, map[string]string
 	}
 	return leaf.route, wildcardMap
 }
+
+// middlewareStack executes the middleware stack.
+// It does so creating/returning an anonymous function/closure.
+// This closure can be called multiple times (eg, next()).
+// Each time it is called, the next middleware is called.
+// Each time a middleware is called, this 'next' function is passed into it, which will/might call it again.
+// There are two 'virtual' middlewares in this stack: the route choosing middleware, and the action invoking middleware.
+// The route choosing middleware is executed after all root middleware.
+// It picks the route.
+// The action invoking middleware is executed after all middleware.
+// It executes the final handler.
+func middlewareStack(closure *middlewareClosure) NextMiddlewareFunc {
+	closure.Next = func(rw ResponseWriter, req *Request) {
+		if closure.currentRouterIndex >= len(closure.Routers) {
+			return
+		}
+
+		// Find middleware to invoke. The goal of this block is to set the middleware variable. If it can't be done, it will be nil.
+		// Side effects of this block:
+		//  - set currentMiddlewareIndex, currentRouterIndex, currentMiddlewareLen
+		//  - calculate route, setting routers/contexts, and fields in req.
+		var middleware *middlewareHandler
+		if closure.currentMiddlewareIndex < closure.currentMiddlewareLen {
+			middleware = closure.Routers[closure.currentRouterIndex].middleware[closure.currentMiddlewareIndex]
+		} else {
+			// We ran out of middleware on the current router
+			if closure.currentRouterIndex == 0 {
+				// If we're still on the root router, it's time to actually figure out what the route is.
+				// Do so, and update the various variables.
+				// We could also 404 at this point: if so, run NotFound handlers and return.
+				theRoute, wildcardMap := calculateRoute(closure.RootRouter, req)
+				if theRoute == nil && httpMethod(req.Method) == httpMethodOptions {
+					optionsMethod := req.Header.Get("Access-Control-Request-Method")
+					methods := make([]string, 0, len(httpMethods))
+					var lastLeaf *pathLeaf
+					for _, method := range httpMethods {
+						if method == httpMethodOptions {
+							continue
+						}
+						tree := closure.RootRouter.root[method]
+						leaf, wildcards := tree.Match(req.URL.Path)
+						if leaf != nil {
+							methods = append(methods, string(method))
+							lastLeaf = leaf
+							if optionsMethod == string(method) {
+								wildcardMap = wildcards
+							}
+						}
+					}
+
+					if len(methods) > 0 {
+						handler := &actionHandler{Generic: true, GenericHandler: closure.RootRouter.genericOptionsHandler(closure.Contexts[0], methods)}
+						theRoute = &route{Method: httpMethodOptions, Path: lastLeaf.route.Path, Router: lastLeaf.route.Router, Handler: handler}
+					}
+				}
+
+				if theRoute == nil {
+					if closure.RootRouter.notFoundHandler.IsValid() {
+						invoke(closure.RootRouter.notFoundHandler, closure.Contexts[0], []reflect.Value{reflect.ValueOf(rw), reflect.ValueOf(req)})
+					} else {
+						rw.WriteHeader(http.StatusNotFound)
+						fmt.Fprintf(rw, DefaultNotFoundResponse)
+					}
+					return
+				}
+
+				closure.Routers = routersFor(theRoute, closure.Routers)
+				closure.Contexts = contextsFor(closure.Contexts, closure.Routers)
+
+				req.targetContext = closure.Contexts[len(closure.Contexts)-1]
+				req.route = theRoute
+				req.PathParams = wildcardMap
+			}
+
+			closure.currentMiddlewareIndex = 0
+			closure.currentRouterIndex++
+			routersLen := len(closure.Routers)
+			for closure.currentRouterIndex < routersLen {
+				closure.currentMiddlewareLen = len(closure.Routers[closure.currentRouterIndex].middleware)
+				if closure.currentMiddlewareLen > 0 {
+					break
+				}
+				closure.currentRouterIndex++
+			}
+
+			if closure.currentRouterIndex < routersLen {
+				middleware = closure.Routers[closure.currentRouterIndex].middleware[closure.currentMiddlewareIndex]
+			} else {
+				// Done! invoke the action.
+				handler := req.route.Handler
+				if handler.Generic {
+					handler.GenericHandler(rw, req)
+				} else {
+					handler.DynamicHandler.Call([]reflect.Value{closure.Contexts[len(closure.Contexts)-1], reflect.ValueOf(rw), reflect.ValueOf(req)})
+				}
+			}
+		}
+
+		closure.currentMiddlewareIndex++
+
+		// Invoke middleware.
+		if middleware != nil {
+			middleware.invoke(closure.Contexts[closure.currentRouterIndex], rw, req, closure.Next)
+		}
+	}
+	return closure.Next
+}
