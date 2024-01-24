@@ -42,6 +42,10 @@ func (c *Context) ErrorAction(w ResponseWriter, r *Request) {
 	fmt.Fprintln(w, x/y)
 }
 
+type APIContext struct {
+	*Context
+}
+
 // callerInfo returns the caller's caller info.
 func callerInfo() string {
 	_, file, line, ok := runtime.Caller(2)
