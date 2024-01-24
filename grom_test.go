@@ -46,6 +46,16 @@ type APIContext struct {
 	*Context
 }
 
+func (c *APIContext) ErrorHandler(w ResponseWriter, r *Request, err interface{}) {
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintf(w, "Api Error")
+}
+
+func (c *APIContext) ErrorAction(w ResponseWriter, r *Request) {
+	var x, y int
+	fmt.Fprintln(w, x/y)
+}
+
 // callerInfo returns the caller's caller info.
 func callerInfo() string {
 	_, file, line, ok := runtime.Caller(2)
