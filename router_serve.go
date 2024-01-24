@@ -1,6 +1,18 @@
 package grom
 
-import "reflect"
+import (
+	"fmt"
+	"net/http"
+	"reflect"
+	"runtime"
+)
+
+var (
+	// DefaultNotFoundResponse is the default text rendered when no route is found and no NotFound handlers are present.
+	DefaultNotFoundResponse = "Not Found"
+	// DefaultPanicResponse is the default text rendered when a panic occurs and no Error handlers are present.
+	DefaultPanicResponse = "Application Error"
+)
 
 type middlewareClosure struct {
 	appResponseWriter
@@ -20,6 +32,45 @@ func (mw *middlewareHandler) invoke(ctx reflect.Value, rw ResponseWriter, req *R
 	} else {
 		mw.DynamicMiddleware.Call([]reflect.Value{ctx, reflect.ValueOf(rw), reflect.ValueOf(req), reflect.ValueOf(next)})
 	}
+}
+
+// If there's a panic in the root middleware (so that we don't have a route/target),
+// then invoke the root handler or default.
+// If there's a panic in other middleware, then invoke the target action's function.
+// If there's a panic in the action handler, then invoke the target action's function.
+func (rootRouter *Router) handlePanic(rw *appResponseWriter, req *Request, err interface{}) {
+	var targetRouter *Router  // This will be set to the router we want to use the errorHandler on.
+	var context reflect.Value // this is the context of the target router
+	if req.route == nil {
+		targetRouter = rootRouter
+		context = req.rootContext
+	} else {
+		targetRouter = req.route.Router
+		context = req.targetContext
+		for !targetRouter.errorHandler.IsValid() && targetRouter.parent != nil {
+			targetRouter = targetRouter.parent
+			// Need to set context to the next context, UNLESS the context is the same type.
+			curContextStruct := reflect.Indirect(context)
+			if targetRouter.contextType != curContextStruct.Type() {
+				context = curContextStruct.Field(0)
+				if reflect.Indirect(context).Type() != targetRouter.contextType {
+					panic("bug: shouldn't get here")
+				}
+			}
+		}
+	}
+
+	if targetRouter.errorHandler.IsValid() {
+		invoke(targetRouter.errorHandler, context, []reflect.Value{reflect.ValueOf(rw), reflect.ValueOf(req), reflect.ValueOf(err)})
+	} else {
+		http.Error(rw, DefaultPanicResponse, http.StatusInternalServerError)
+	}
+
+	const size = 4096
+	stack := make([]byte, size)
+	stack = stack[:runtime.Stack(stack, false)]
+
+	PanicHandler.Panic(fmt.Sprint(req.URL), err, string(stack))
 }
 
 // routersFor returns [root router, child router, ..., leaf route's router]
