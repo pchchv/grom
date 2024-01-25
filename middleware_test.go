@@ -159,3 +159,39 @@ func TestDualLeaningLeftTree(t *testing.T) {
 	router.ServeHTTP(rw, req)
 	assertResponse(t, rw, "api-mw-Delta api-C", 200)
 }
+
+func TestTicketsA(t *testing.T) {
+	router := New(Context{})
+	admin := router.Subrouter(AdminContext{}, "/admin")
+	admin.Middleware((*AdminContext).mwEpsilon)
+	tickets := admin.Subrouter(TicketsContext{}, "/tickets")
+	tickets.Get("/action", (*TicketsContext).D)
+
+	rw, req := newTestRequest("GET", "/admin/tickets/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "admin-mw-Epsilon tickets-D", 200)
+}
+
+func TestTicketsB(t *testing.T) {
+	router := New(Context{})
+	admin := router.Subrouter(AdminContext{}, "/admin")
+	tickets := admin.Subrouter(TicketsContext{}, "/tickets")
+	tickets.Middleware((*TicketsContext).mwEta)
+	tickets.Get("/action", (*TicketsContext).D)
+
+	rw, req := newTestRequest("GET", "/admin/tickets/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "tickets-mw-Eta tickets-D", 200)
+}
+
+func TestTicketsC(t *testing.T) {
+	router := New(Context{})
+	router.Middleware((*Context).mwAlpha)
+	admin := router.Subrouter(AdminContext{}, "/admin")
+	tickets := admin.Subrouter(TicketsContext{}, "/tickets")
+	tickets.Get("/action", (*TicketsContext).D)
+
+	rw, req := newTestRequest("GET", "/admin/tickets/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-mw-Alpha tickets-D", 200)
+}
