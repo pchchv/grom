@@ -1,6 +1,9 @@
 package grom
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+)
 
 func (c *Context) A(w ResponseWriter, r *Request) {
 	fmt.Fprintf(w, "context-A")
@@ -64,4 +67,18 @@ func (c *TicketsContext) mwEta(w ResponseWriter, r *Request, next NextMiddleware
 func mwGenricInterface(ctx interface{}, w ResponseWriter, r *Request, next NextMiddlewareFunc) {
 	fmt.Fprintf(w, "context-mw-Interface ")
 	next(w, r)
+}
+
+func TestFlatNoMiddleware(t *testing.T) {
+	router := New(Context{})
+	router.Get("/action", (*Context).A)
+	router.Get("/action_z", (*Context).Z)
+
+	rw, req := newTestRequest("GET", "/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-A", 200)
+
+	rw, req = newTestRequest("GET", "/action_z")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-Z", 200)
 }
