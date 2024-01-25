@@ -248,3 +248,23 @@ func TestSameContext(t *testing.T) {
 	router.ServeHTTP(rw, req)
 	assertResponse(t, rw, "context-mw-Alpha context-mw-Beta context-mw-Gamma context-A", 200)
 }
+
+func TestSameNamespace(t *testing.T) {
+	router := New(Context{})
+	admin := router.Subrouter(AdminContext{}, "/")
+	admin.Get("/action", (*AdminContext).B)
+
+	rw, req := newTestRequest("GET", "/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "admin-B", 200)
+}
+
+func TestInterfaceMiddleware(t *testing.T) {
+	router := New(Context{})
+	router.Middleware(mwGenricInterface)
+	router.Get("/action", (*Context).A)
+
+	rw, req := newTestRequest("GET", "/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-mw-Interface context-A", 200)
+}
