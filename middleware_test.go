@@ -50,3 +50,13 @@ func (c *AdminContext) mwEpsilon(w ResponseWriter, r *Request, next NextMiddlewa
 	fmt.Fprintf(w, "admin-mw-Epsilon ")
 	next(w, r)
 }
+
+func (c *AdminContext) mwZeta(w ResponseWriter, r *Request, next NextMiddlewareFunc) {
+	fmt.Fprintf(w, "admin-mw-Zeta ")
+	next(w, r)
+}
+
+func (c *TicketsContext) mwEta(w ResponseWriter, r *Request, next NextMiddlewareFunc) {
+	fmt.Fprintf(w, "tickets-mw-Eta ")
+	next(w, r)
+}
