@@ -82,3 +82,34 @@ func TestFlatNoMiddleware(t *testing.T) {
 	router.ServeHTTP(rw, req)
 	assertResponse(t, rw, "context-Z", 200)
 }
+
+func TestFlatOneMiddleware(t *testing.T) {
+	router := New(Context{})
+	router.Middleware((*Context).mwAlpha)
+	router.Get("/action", (*Context).A)
+	router.Get("/action_z", (*Context).Z)
+
+	rw, req := newTestRequest("GET", "/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-mw-Alpha context-A", 200)
+
+	rw, req = newTestRequest("GET", "/action_z")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-mw-Alpha context-Z", 200)
+}
+
+func TestFlatTwoMiddleware(t *testing.T) {
+	router := New(Context{})
+	router.Middleware((*Context).mwAlpha)
+	router.Middleware((*Context).mwBeta)
+	router.Get("/action", (*Context).A)
+	router.Get("/action_z", (*Context).Z)
+
+	rw, req := newTestRequest("GET", "/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-mw-Alpha context-mw-Beta context-A", 200)
+
+	rw, req = newTestRequest("GET", "/action_z")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-mw-Alpha context-mw-Beta context-Z", 200)
+}
