@@ -195,3 +195,33 @@ func TestTicketsC(t *testing.T) {
 	router.ServeHTTP(rw, req)
 	assertResponse(t, rw, "context-mw-Alpha tickets-D", 200)
 }
+
+func TestTicketsD(t *testing.T) {
+	router := New(Context{})
+	router.Middleware((*Context).mwAlpha)
+	admin := router.Subrouter(AdminContext{}, "/admin")
+	tickets := admin.Subrouter(TicketsContext{}, "/tickets")
+	tickets.Middleware((*TicketsContext).mwEta)
+	tickets.Get("/action", (*TicketsContext).D)
+
+	rw, req := newTestRequest("GET", "/admin/tickets/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-mw-Alpha tickets-mw-Eta tickets-D", 200)
+}
+
+func TestTicketsE(t *testing.T) {
+	router := New(Context{})
+	router.Middleware((*Context).mwAlpha)
+	router.Middleware((*Context).mwBeta)
+	router.Middleware((*Context).mwGamma)
+	admin := router.Subrouter(AdminContext{}, "/admin")
+	admin.Middleware((*AdminContext).mwEpsilon)
+	admin.Middleware((*AdminContext).mwZeta)
+	tickets := admin.Subrouter(TicketsContext{}, "/tickets")
+	tickets.Middleware((*TicketsContext).mwEta)
+	tickets.Get("/action", (*TicketsContext).D)
+
+	rw, req := newTestRequest("GET", "/admin/tickets/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "context-mw-Alpha context-mw-Beta context-mw-Gamma admin-mw-Epsilon admin-mw-Zeta tickets-mw-Eta tickets-D", 200)
+}
