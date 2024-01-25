@@ -60,3 +60,8 @@ func (c *TicketsContext) mwEta(w ResponseWriter, r *Request, next NextMiddleware
 	fmt.Fprintf(w, "tickets-mw-Eta ")
 	next(w, r)
 }
+
+func mwGenricInterface(ctx interface{}, w ResponseWriter, r *Request, next NextMiddlewareFunc) {
+	fmt.Fprintf(w, "context-mw-Interface ")
+	next(w, r)
+}
