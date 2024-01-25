@@ -6,6 +6,14 @@ func (c *Context) A(w ResponseWriter, r *Request) {
 	fmt.Fprintf(w, "context-A")
 }
 
+func (c *AdminContext) B(w ResponseWriter, r *Request) {
+	fmt.Fprintf(w, "admin-B")
+}
+
+func (c *APIContext) C(w ResponseWriter, r *Request) {
+	fmt.Fprintf(w, "api-C")
+}
+
 func (c *Context) Z(w ResponseWriter, r *Request) {
 	fmt.Fprintf(w, "context-Z")
 }
@@ -21,5 +29,10 @@ func (c *Context) mwAlpha(w ResponseWriter, r *Request, next NextMiddlewareFunc)
 
 func (c *Context) mwBeta(w ResponseWriter, r *Request, next NextMiddlewareFunc) {
 	fmt.Fprintf(w, "context-mw-Beta ")
+	next(w, r)
+}
+
+func (c *Context) mwGamma(w ResponseWriter, r *Request, next NextMiddlewareFunc) {
+	fmt.Fprintf(w, "context-mw-Gamma ")
 	next(w, r)
 }
