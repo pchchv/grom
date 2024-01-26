@@ -354,3 +354,37 @@ func TestRouteHead(t *testing.T) {
 	router.ServeHTTP(rw, req)
 	assertResponse(t, rw, "context-A", 200)
 }
+
+func TestIsRouted(t *testing.T) {
+	router := New(Context{})
+	router.Middleware(func(w ResponseWriter, r *Request, next NextMiddlewareFunc) {
+		if r.IsRouted() {
+			t.Error("Shouldn't be routed yet but was.")
+		}
+		if r.RoutePath() != "" {
+			t.Error("Shouldn't have a route path yet.")
+		}
+		next(w, r)
+		if !r.IsRouted() {
+			t.Error("Should have been routed but wasn't.")
+		}
+	})
+
+	subrouter := router.Subrouter(Context{}, "")
+	subrouter.Middleware(func(w ResponseWriter, r *Request, next NextMiddlewareFunc) {
+		if !r.IsRouted() {
+			t.Error("Should have been routed but wasn't.")
+		}
+		next(w, r)
+		if !r.IsRouted() {
+			t.Error("Should have been routed but wasn't.")
+		}
+	})
+	subrouter.Get("/a", func(w ResponseWriter, r *Request) {
+		fmt.Fprintf(w, r.RoutePath())
+	})
+
+	rw, req := newTestRequest("GET", "/a")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "/a", 200)
+}
