@@ -86,3 +86,29 @@ func TestMultipleErrorHandlers2(t *testing.T) {
 	router.ServeHTTP(rw, req)
 	assertResponse(t, rw, "Api Error", http.StatusInternalServerError)
 }
+
+func TestRootMiddlewarePanic(t *testing.T) {
+	router := New(Context{})
+	router.Middleware((*Context).ErrorMiddleware)
+	router.Error((*Context).ErrorHandler)
+	admin := router.Subrouter(AdminContext{}, "/admin")
+	admin.Error((*AdminContext).ErrorHandler)
+	admin.Get("/action", (*AdminContext).ErrorAction)
+
+	rw, req := newTestRequest("GET", "/admin/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "My Error", 500)
+}
+
+func TestNonRootMiddlewarePanic(t *testing.T) {
+	router := New(Context{})
+	router.Error((*Context).ErrorHandler)
+	admin := router.Subrouter(AdminContext{}, "/admin")
+	admin.Middleware((*AdminContext).ErrorMiddleware)
+	admin.Error((*AdminContext).ErrorHandler)
+	admin.Get("/action", (*AdminContext).ErrorAction)
+
+	rw, req := newTestRequest("GET", "/admin/action")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "Admin Error", 500)
+}
