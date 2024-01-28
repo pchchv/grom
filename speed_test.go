@@ -45,3 +45,15 @@ func (c *BenchContextB) Action(w ResponseWriter, r *Request) {
 func (c *BenchContextC) Action(w ResponseWriter, r *Request) {
 	fmt.Fprintf(w, "hello")
 }
+
+func (c *BenchContext) Middleware(rw ResponseWriter, r *Request, next NextMiddlewareFunc) {
+	next(rw, r)
+}
+
+func (c *BenchContextB) Middleware(rw ResponseWriter, r *Request, next NextMiddlewareFunc) {
+	next(rw, r)
+}
+
+func (c *BenchContextC) Middleware(rw ResponseWriter, r *Request, next NextMiddlewareFunc) {
+	next(rw, r)
+}
