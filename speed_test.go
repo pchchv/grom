@@ -21,7 +21,7 @@ func (w *NullWriter) WriteHeader(statusCode int) {}
 // Types used by any/all frameworks:
 type RouterBuilder func(namespaces []string, resources []string) http.Handler
 
-// Benchmarks for gocraft/web:
+// Benchmarks for pchchv/web:
 type BenchContext struct {
 	MyField string
 }
@@ -56,4 +56,23 @@ func (c *BenchContextB) Middleware(rw ResponseWriter, r *Request, next NextMiddl
 
 func (c *BenchContextC) Middleware(rw ResponseWriter, r *Request, next NextMiddlewareFunc) {
 	next(rw, r)
+}
+
+func webHandler(rw ResponseWriter, r *Request) {
+	fmt.Fprintf(rw, "hello")
+}
+
+func webRouterFor(namespaces []string, resources []string) http.Handler {
+	router := New(BenchContext{})
+	for _, ns := range namespaces {
+		subrouter := router.Subrouter(BenchContext{}, "/"+ns)
+		for _, res := range resources {
+			subrouter.Get("/"+res, (*BenchContext).Action)
+			subrouter.Post("/"+res, (*BenchContext).Action)
+			subrouter.Get("/"+res+"/:id", (*BenchContext).Action)
+			subrouter.Put("/"+res+"/:id", (*BenchContext).Action)
+			subrouter.Delete("/"+res+"/:id", (*BenchContext).Action)
+		}
+	}
+	return router
 }
