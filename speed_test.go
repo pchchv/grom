@@ -17,3 +17,16 @@ func (w *NullWriter) WriteHeader(statusCode int) {}
 
 // Types used by any/all frameworks:
 type RouterBuilder func(namespaces []string, resources []string) http.Handler
+
+// Benchmarks for gocraft/web:
+type BenchContext struct {
+	MyField string
+}
+
+type BenchContextB struct {
+	*BenchContext
+}
+
+type BenchContextC struct {
+	*BenchContextB
+}
