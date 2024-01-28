@@ -113,6 +113,26 @@ func BenchmarkGrom_Middleware(b *testing.B) {
 	}
 }
 
+func BenchmarkGrom_Route15(b *testing.B) {
+	benchmarkRoutesN(b, 1, gromRouterFor)
+}
+
+func BenchmarkGrom_Route75(b *testing.B) {
+	benchmarkRoutesN(b, 5, gromRouterFor)
+}
+
+func BenchmarkGrom_Route150(b *testing.B) {
+	benchmarkRoutesN(b, 10, gromRouterFor)
+}
+
+func BenchmarkGrom_Route300(b *testing.B) {
+	benchmarkRoutesN(b, 20, gromRouterFor)
+}
+
+func BenchmarkGrom_Route3000(b *testing.B) {
+	benchmarkRoutesN(b, 200, gromRouterFor)
+}
+
 func testRequest(method, path string) (*httptest.ResponseRecorder, *http.Request) {
 	request, _ := http.NewRequest(method, path, nil)
 	recorder := httptest.NewRecorder()
