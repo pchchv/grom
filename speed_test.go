@@ -62,11 +62,11 @@ func (c *BenchContextC) Middleware(rw ResponseWriter, r *Request, next NextMiddl
 	next(rw, r)
 }
 
-func webHandler(rw ResponseWriter, r *Request) {
+func gromHandler(rw ResponseWriter, r *Request) {
 	fmt.Fprintf(rw, "hello")
 }
 
-func webRouterFor(namespaces []string, resources []string) http.Handler {
+func gromRouterFor(namespaces []string, resources []string) http.Handler {
 	router := New(BenchContext{})
 	for _, ns := range namespaces {
 		subrouter := router.Subrouter(BenchContext{}, "/"+ns)
