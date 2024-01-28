@@ -14,3 +14,6 @@ func (w *NullWriter) Write(data []byte) (n int, err error) {
 }
 
 func (w *NullWriter) WriteHeader(statusCode int) {}
+
+// Types used by any/all frameworks:
+type RouterBuilder func(namespaces []string, resources []string) http.Handler
