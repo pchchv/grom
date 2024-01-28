@@ -1,6 +1,9 @@
 package grom
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 // Null response writer
 type NullWriter struct{}
@@ -29,4 +32,16 @@ type BenchContextB struct {
 
 type BenchContextC struct {
 	*BenchContextB
+}
+
+func (c *BenchContext) Action(w ResponseWriter, r *Request) {
+	fmt.Fprintf(w, "hello")
+}
+
+func (c *BenchContextB) Action(w ResponseWriter, r *Request) {
+	fmt.Fprintf(w, c.MyField)
+}
+
+func (c *BenchContextC) Action(w ResponseWriter, r *Request) {
+	fmt.Fprintf(w, "hello")
 }
