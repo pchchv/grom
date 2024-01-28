@@ -81,6 +81,38 @@ func gromRouterFor(namespaces []string, resources []string) http.Handler {
 	return router
 }
 
+func BenchmarkGrom_Simple(b *testing.B) {
+	router := New(BenchContext{})
+	router.Get("/action", gromHandler)
+
+	rw, req := testRequest("GET", "/action")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		router.ServeHTTP(rw, req)
+	}
+}
+
+func BenchmarkGrom_Middleware(b *testing.B) {
+	router := New(BenchContext{})
+	router.Middleware((*BenchContext).Middleware)
+	router.Middleware((*BenchContext).Middleware)
+	routerB := router.Subrouter(BenchContextB{}, "/b")
+	routerB.Middleware((*BenchContextB).Middleware)
+	routerB.Middleware((*BenchContextB).Middleware)
+	routerC := routerB.Subrouter(BenchContextC{}, "/c")
+	routerC.Middleware((*BenchContextC).Middleware)
+	routerC.Middleware((*BenchContextC).Middleware)
+	routerC.Get("/action", (*BenchContextC).Action)
+
+	rw, req := testRequest("GET", "/b/c/action")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		router.ServeHTTP(rw, req)
+	}
+}
+
 func testRequest(method, path string) (*httptest.ResponseRecorder, *http.Request) {
 	request, _ := http.NewRequest(method, path, nil)
 	recorder := httptest.NewRecorder()
