@@ -133,6 +133,61 @@ func BenchmarkGrom_Route3000(b *testing.B) {
 	benchmarkRoutesN(b, 200, gromRouterFor)
 }
 
+// All middlweare/handlers don't accept context here.
+func BenchmarkGrom_Generic(b *testing.B) {
+	nextMw := func(rw ResponseWriter, r *Request, next NextMiddlewareFunc) {
+		next(rw, r)
+	}
+
+	router := New(BenchContext{})
+	router.Middleware(nextMw)
+	router.Middleware(nextMw)
+	routerB := router.Subrouter(BenchContextB{}, "/b")
+	routerB.Middleware(nextMw)
+	routerB.Middleware(nextMw)
+	routerC := routerB.Subrouter(BenchContextC{}, "/c")
+	routerC.Middleware(nextMw)
+	routerC.Middleware(nextMw)
+	routerC.Get("/action", gromHandler)
+
+	rw, req := testRequest("GET", "/b/c/action")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		router.ServeHTTP(rw, req)
+		// if rw.Code != 200 { panic("no good") }
+	}
+}
+
+// Intended to be my "single metric". It does a bit of everything.
+// 75 routes, middleware, and middleware -> handler communication.
+func BenchmarkGrom_Composite(b *testing.B) {
+	namespaces, resources, requests := resourceSetup(10)
+
+	router := New(BenchContext{})
+	router.Middleware(func(c *BenchContext, rw ResponseWriter, r *Request, next NextMiddlewareFunc) {
+		c.MyField = r.URL.Path
+		next(rw, r)
+	})
+	router.Middleware((*BenchContext).Middleware)
+	router.Middleware((*BenchContext).Middleware)
+
+	for _, ns := range namespaces {
+		subrouter := router.Subrouter(BenchContextB{}, "/"+ns)
+		subrouter.Middleware((*BenchContextB).Middleware)
+		subrouter.Middleware((*BenchContextB).Middleware)
+		subrouter.Middleware((*BenchContextB).Middleware)
+		for _, res := range resources {
+			subrouter.Get("/"+res, (*BenchContextB).Action)
+			subrouter.Post("/"+res, (*BenchContextB).Action)
+			subrouter.Get("/"+res+"/:id", (*BenchContextB).Action)
+			subrouter.Put("/"+res+"/:id", (*BenchContextB).Action)
+			subrouter.Delete("/"+res+"/:id", (*BenchContextB).Action)
+		}
+	}
+	benchmarkRoutes(b, router, requests)
+}
+
 func testRequest(method, path string) (*httptest.ResponseRecorder, *http.Request) {
 	request, _ := http.NewRequest(method, path, nil)
 	recorder := httptest.NewRecorder()
