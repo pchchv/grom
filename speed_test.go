@@ -1,8 +1,11 @@
 package grom
 
 import (
+	"crypto/sha1"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
 )
 
 // Null response writer
@@ -75,4 +78,41 @@ func webRouterFor(namespaces []string, resources []string) http.Handler {
 		}
 	}
 	return router
+}
+
+func testRequest(method, path string) (*httptest.ResponseRecorder, *http.Request) {
+	request, _ := http.NewRequest(method, path, nil)
+	recorder := httptest.NewRecorder()
+
+	return recorder, request
+}
+
+// Returns a routeset with N *resources per namespace*. so N=1 gives about 15 routes
+func resourceSetup(N int) (namespaces []string, resources []string, requests []*http.Request) {
+	namespaces = []string{"admin", "api", "site"}
+	resources = []string{}
+
+	for i := 0; i < N; i++ {
+		sha1 := sha1.New()
+		io.WriteString(sha1, fmt.Sprintf("%d", i))
+		strResource := fmt.Sprintf("%x", sha1.Sum(nil))
+		resources = append(resources, strResource)
+	}
+
+	for _, ns := range namespaces {
+		for _, res := range resources {
+			req, _ := http.NewRequest("GET", "/"+ns+"/"+res, nil)
+			requests = append(requests, req)
+			req, _ = http.NewRequest("POST", "/"+ns+"/"+res, nil)
+			requests = append(requests, req)
+			req, _ = http.NewRequest("GET", "/"+ns+"/"+res+"/3937", nil)
+			requests = append(requests, req)
+			req, _ = http.NewRequest("PUT", "/"+ns+"/"+res+"/3937", nil)
+			requests = append(requests, req)
+			req, _ = http.NewRequest("DELETE", "/"+ns+"/"+res+"/3937", nil)
+			requests = append(requests, req)
+		}
+	}
+
+	return
 }
