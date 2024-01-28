@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 )
 
 // Null response writer
@@ -115,4 +116,24 @@ func resourceSetup(N int) (namespaces []string, resources []string, requests []*
 	}
 
 	return
+}
+
+func benchmarkRoutesN(b *testing.B, N int, builder RouterBuilder) {
+	namespaces, resources, requests := resourceSetup(N)
+	router := builder(namespaces, resources)
+	benchmarkRoutes(b, router, requests)
+}
+
+func benchmarkRoutes(b *testing.B, handler http.Handler, requests []*http.Request) {
+	recorder := &NullWriter{}
+	reqID := 0
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if reqID >= len(requests) {
+			reqID = 0
+		}
+		req := requests[reqID]
+		handler.ServeHTTP(recorder, req)
+		reqID++
+	}
 }
