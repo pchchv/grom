@@ -1,5 +1,11 @@
 package grom
 
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
 func (c *Context) InvalidHandler() {}
 
 func (c *Context) InvalidHandler2(w ResponseWriter, r *Request) string {
@@ -14,4 +20,28 @@ func (c *invalidSubcontext) Handler(w ResponseWriter, r *Request) {}
 
 type invalidSubcontext2 struct {
 	*invalidSubcontext
+}
+
+func TestInvalidContext(t *testing.T) {
+	assert.Panics(t, func() {
+		New(1)
+	})
+
+	assert.Panics(t, func() {
+		router := New(Context{})
+		router.Subrouter(invalidSubcontext{}, "")
+	})
+
+	assert.Panics(t, func() {
+		router := New(Context{})
+		router.Subrouter(invalidSubcontext2{}, "")
+	})
+}
+
+func TestInvalidMiddleware(t *testing.T) {
+	router := New(Context{})
+
+	assert.Panics(t, func() {
+		router.Middleware((*Context).InvalidHandler)
+	})
 }
