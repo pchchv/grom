@@ -3,6 +3,7 @@ package grom
 import (
 	"fmt"
 	"net/http"
+	"testing"
 )
 
 func (c *Context) HandlerWithContext(rw ResponseWriter, r *Request) {
@@ -13,4 +14,20 @@ func (c *Context) HandlerWithContext(rw ResponseWriter, r *Request) {
 func MyNotFoundHandler(rw ResponseWriter, r *Request) {
 	rw.WriteHeader(http.StatusNotFound)
 	fmt.Fprintf(rw, "My Not Found")
+}
+
+func TestWithRootContext(t *testing.T) {
+	router := New(Context{})
+	router.NotFound((*Context).HandlerWithContext)
+
+	rw, req := newTestRequest("GET", "/this_path_doesnt_exist")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "My Not Found With Context", http.StatusNotFound)
+}
+
+func TestNoHandler(t *testing.T) {
+	router := New(Context{})
+	rw, req := newTestRequest("GET", "/this_path_doesnt_exist")
+	router.ServeHTTP(rw, req)
+	assertResponse(t, rw, "Not Found", http.StatusNotFound)
 }
