@@ -40,3 +40,11 @@ type closeNotifyingRecorder struct {
 	*httptest.ResponseRecorder
 	closed chan bool
 }
+
+func (c *closeNotifyingRecorder) CloseNotify() <-chan bool {
+	return c.closed
+}
+
+func (c *closeNotifyingRecorder) close() {
+	c.closed <- true
+}
