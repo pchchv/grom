@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -93,4 +94,26 @@ func TestResponseWriterHijackNotOK(t *testing.T) {
 	rw := ResponseWriter(&appResponseWriter{ResponseWriter: httptest.NewRecorder()})
 	_, _, err := rw.Hijack()
 	assert.Error(t, err)
+}
+
+func TestResponseWriterFlush(t *testing.T) {
+	rw := ResponseWriter(&appResponseWriter{ResponseWriter: httptest.NewRecorder()})
+	rw.Flush()
+}
+
+func TestResponseWriterCloseNotify(t *testing.T) {
+	rec := &closeNotifyingRecorder{
+		httptest.NewRecorder(),
+		make(chan bool, 1),
+	}
+	rw := ResponseWriter(&appResponseWriter{ResponseWriter: rec})
+	closed := false
+	notifier := rw.(http.CloseNotifier).CloseNotify()
+	rec.close()
+	select {
+	case <-notifier:
+		closed = true
+	case <-time.After(time.Second):
+	}
+	assert.True(t, closed)
 }
