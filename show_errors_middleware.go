@@ -123,6 +123,20 @@ const panicPageTpl string = `
   </html>
   `
 
+// ShowErrorsMiddleware will catch panics and render an HTML page with the stack trace.
+// This middleware should only be used in development.
+func ShowErrorsMiddleware(rw ResponseWriter, req *Request, next NextMiddlewareFunc) {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 4096
+			stack := make([]byte, size)
+			stack = stack[:runtime.Stack(stack, false)]
+			renderPrettyError(rw, req, err, stack)
+		}
+	}()
+	next(rw, req)
+}
+
 func renderPrettyError(rw ResponseWriter, req *Request, err interface{}, stack []byte) {
 	_, filePath, line, _ := runtime.Caller(5)
 	data := map[string]interface{}{
