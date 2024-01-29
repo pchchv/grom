@@ -11,3 +11,7 @@ func (c *Context) InvalidHandler3(w ResponseWriter, r ResponseWriter) {}
 type invalidSubcontext struct{}
 
 func (c *invalidSubcontext) Handler(w ResponseWriter, r *Request) {}
+
+type invalidSubcontext2 struct {
+	*invalidSubcontext
+}
