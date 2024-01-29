@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 	"net/http"
+	"net/http/httptest"
 )
 
 type hijackableResponse struct {
@@ -33,4 +34,9 @@ func (h *hijackableResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 func (h *hijackableResponse) CloseNotify() <-chan bool {
 	return nil
+}
+
+type closeNotifyingRecorder struct {
+	*httptest.ResponseRecorder
+	closed chan bool
 }
