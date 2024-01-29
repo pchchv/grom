@@ -64,3 +64,29 @@ func TestInvalidNotFound(t *testing.T) {
 		subrouter.NotFound((*Context).A)
 	})
 }
+
+func TestInvalidHandler(t *testing.T) {
+	router := New(Context{})
+	assert.Panics(t, func() {
+		router.Get("/action", 1)
+	})
+
+	assert.Panics(t, func() {
+		router.Get("/action", (*Context).InvalidHandler)
+	})
+
+	// Returns a string:
+	assert.Panics(t, func() {
+		router.Get("/action", (*Context).InvalidHandler2)
+	})
+
+	// Two writer inputs:
+	assert.Panics(t, func() {
+		router.Get("/action", (*Context).InvalidHandler3)
+	})
+
+	// Wrong context type:
+	assert.Panics(t, func() {
+		router.Get("/action", (*invalidSubcontext).Handler)
+	})
+}
