@@ -40,8 +40,27 @@ func TestInvalidContext(t *testing.T) {
 
 func TestInvalidMiddleware(t *testing.T) {
 	router := New(Context{})
-
 	assert.Panics(t, func() {
 		router.Middleware((*Context).InvalidHandler)
+	})
+}
+
+func TestInvalidError(t *testing.T) {
+	router := New(Context{})
+	assert.Panics(t, func() {
+		router.Error((*Context).InvalidHandler)
+	})
+}
+
+func TestInvalidNotFound(t *testing.T) {
+	router := New(Context{})
+	assert.Panics(t, func() {
+		router.NotFound((*Context).InvalidHandler)
+	})
+
+	// Valid handler not on main router:
+	subrouter := router.Subrouter(Context{}, "")
+	assert.Panics(t, func() {
+		subrouter.NotFound((*Context).A)
 	})
 }
