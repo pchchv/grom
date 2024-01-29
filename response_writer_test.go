@@ -78,3 +78,19 @@ func TestResponseWriterWriteHeader(t *testing.T) {
 	assert.Equal(t, rec.Code, rw.StatusCode())
 	assert.Equal(t, rec.Code, http.StatusNotFound)
 }
+
+func TestResponseWriterHijack(t *testing.T) {
+	hijackable := &hijackableResponse{}
+	rw := ResponseWriter(&appResponseWriter{ResponseWriter: hijackable})
+	hijacker, ok := rw.(http.Hijacker)
+	assert.True(t, ok)
+	_, _, err := hijacker.Hijack()
+	assert.NoError(t, err)
+	assert.True(t, hijackable.Hijacked)
+}
+
+func TestResponseWriterHijackNotOK(t *testing.T) {
+	rw := ResponseWriter(&appResponseWriter{ResponseWriter: httptest.NewRecorder()})
+	_, _, err := rw.Hijack()
+	assert.Error(t, err)
+}
